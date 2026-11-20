@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetTrack Pro | Automated Student LeetCode Analytics & Streak Extractor</title>
+  <meta name="description" content="Upload multi-sheet student Excel rosters to automatically extract Easy, Medium, Hard problem metrics, daily coding streaks, and global rankings from LeetCode.">
+  
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js, SheetJS, html2canvas & Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  
+  <!-- Application CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+  <!-- Glowing Background Ambient Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Main Application Layout -->
+  <div class="app-layout">
+    
+    <!-- Top Executive Navigation Bar -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="logo-box">
+          <svg class="lc-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16.102 17.93l-2.697 2.607c-.466.467-1.111.662-1.823.662s-1.357-.195-1.824-.662l-4.332-4.363c-.467-.467-.702-1.15-.702-1.863s.235-1.357.702-1.824l4.319-4.38c.467-.467 1.125-.649 1.837-.649s1.357.195 1.823.662l2.697 2.606c.514.515 1.365.497 1.9-.038.535-.536.553-1.387.039-1.901l-2.609-2.636a5.215 5.215 0 0 0-3.85-1.48c-1.411 0-2.812.535-3.889 1.613l-4.319 4.38c-2.146 2.146-2.146 5.626 0 7.772l4.332 4.363c1.077 1.077 2.478 1.613 3.889 1.613 1.411 0 2.812-.536 3.889-1.613l2.697-2.608c.514-.514.496-1.365-.039-1.901-.535-.535-1.386-.553-1.9.038z" fill="#FFA116"/>
+            <path d="M10.8 12.5h10.4c.7 0 1.3-.6 1.3-1.3s-.6-1.3-1.3-1.3H10.8c-.7 0-1.3.6-1.3 1.3s.6 1.3 1.3 1.3z" fill="#E7A41E"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>LeetTrack <span class="badge-tag">ENTERPRISE</span></h1>
+          <p>Automated Student Coding Analytics & Streak Tracker</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button id="btnDownloadSample" class="btn btn-secondary" title="Download sample multi-tab Excel template">
+          <i class="fa-solid fa-file-excel text-emerald"></i>
+          <span>Sample Excel Template</span>
+        </button>
+
+        <button id="btnQuickPasteModal" class="btn btn-secondary" title="Paste student profile links directly">
+          <i class="fa-solid fa-paste text-amber"></i>
+          <span>Quick Paste Links</span>
+        </button>
+
+        <div class="api-status-pill" title="Connected to LeetCode Public GraphQL API">
+          <span class="status-dot"></span>
+          <span>LeetCode API Live</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-content">
+
+      <!-- Upload Zone -->
+      <section class="upload-section" id="uploadSection">
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" hidden />
+          
+          <div class="drop-icon-wrapper">
+            <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+            <div class="glow-ring"></div>
+          </div>
+
+          <h2 class="drop-title">Upload Student LeetCode Roster</h2>
+          <p class="drop-subtitle">
+            Drag and drop your spreadsheet (.xlsx, .xls, .csv) with student LeetCode profile links.<br>
+            Supports <strong>multi-sheet workbooks</strong> (different sections/batches). Automatically extracts <strong>Easy (Low), Medium, Hard (High) solved counts</strong>, <strong>active streaks</strong>, and <strong>global rankings</strong>.
+          </p>
+
+          <div class="drop-actions">
+            <button type="button" class="btn btn-primary btn-large" id="btnBrowseFile">
+              <i class="fa-solid fa-folder-open"></i>
+              <span>Browse Excel File</span>
+            </button>
+            <span class="or-separator">OR</span>
+            <button type="button" class="btn btn-outline" id="btnLoadDemoData">
+              <i class="fa-solid fa-bolt text-amber"></i>
+              <span>Try with Demo Students (Multi-Tab)</span>
+            </button>
+          </div>
+
+          <div class="supported-formats">
+            <span class="format-badge"><i class="fa-regular fa-file-excel"></i> .xlsx</span>
+            <span class="format-badge"><i class="fa-regular fa-file-excel"></i> .xls</span>
+            <span class="format-badge"><i class="fa-solid fa-file-csv"></i> .csv</span>
+            <span class="format-hint"><i class="fa-solid fa-shield-halved"></i> Multi-tab aware • Auto-detects URLs, handles & student details</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Column Mapping & Configuration Card -->
+      <section class="card config-card hidden" id="configCard">
+        <div class="card-header">
+          <div class="header-info">
+            <span class="card-icon"><i class="fa-solid fa-table-columns"></i></span>
+            <div>
+              <h3>Verify & Map Columns</h3>
+              <p id="fileInfoText">File uploaded: 0 rows found</p>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm close-config" id="btnCancelConfig" title="Cancel upload">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="card-body">
+          <!-- Multi-Tab Detection Banner -->
+          <div class="tabs-detected-box hidden" id="tabsDetectedBox">
+            <div class="tabs-header">
+              <span class="tabs-count-badge"><i class="fa-solid fa-layer-group"></i> Multiple Tabs Detected (<span id="detectedTabCount">0</span> Sheets)</span>
+              <span class="tabs-hint">All tabs will be extracted concurrently. The generated report preserves individual tabs plus a master consolidated view.</span>
+            </div>
+            <div class="tabs-chips-container" id="tabsChipsContainer"></div>
+          </div>
+
+          <div class="mapping-grid">
+            <div class="form-group">
+              <label for="selectProfileCol">
+                <i class="fa-brands fa-leetcode text-amber"></i> LeetCode Profile / Link Column <span class="required">*</span>
+              </label>
+              <select id="selectProfileCol" class="form-control"></select>
+              <span class="form-hint">Column containing LeetCode profile links, URLs, or handles</span>
+            </div>
+
+            <div class="form-group">
+              <label for="selectNameCol">
+                <i class="fa-solid fa-user text-blue"></i> Student Full Name Column (Optional)
+              </label>
+              <select id="selectNameCol" class="form-control"></select>
+              <span class="form-hint">Student full name (defaults to LeetCode real name if omitted)</span>
+            </div>
+
+            <div class="form-group">
+              <label for="selectIdCol">
+                <i class="fa-solid fa-id-badge text-emerald"></i> Roll Number / Student ID / Email (Optional)
+              </label>
+              <select id="selectIdCol" class="form-control"></select>
+              <span class="form-hint">University roll number, registration ID, or college email</span>
+            </div>
+          </div>
+
+          <!-- Preview Table -->
+          <div class="preview-box">
+            <div class="preview-header">
+              <span>Data Preview (First 5 Rows)</span>
+              <span class="badge" id="previewRowCount">5 rows</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table-preview" id="tablePreview">
+                <thead id="previewThead"></thead>
+                <tbody id="previewTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button type="button" class="btn btn-secondary" id="btnResetUpload">
+            <i class="fa-solid fa-arrow-left"></i> Change File
+          </button>
+          <button type="button" class="btn btn-primary btn-glow" id="btnStartFetching">
+            <i class="fa-solid fa-rocket"></i>
+            <span>Start Automated Extraction</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Live Fetching Progress HUD -->
+      <section class="card progress-card hidden" id="progressCard">
+        <div class="progress-hud-header">
+          <div class="hud-status">
+            <div class="pulse-spinner"></div>
+            <div>
+              <h3 id="progressTitle">Extracting Student Profiles...</h3>
+              <p id="progressSubtitle">Querying LeetCode GraphQL API with concurrency throttling</p>
+            </div>
+          </div>
+
+          <div class="hud-stats">
+            <div class="mini-stat">
+              <span class="mini-label">Completion</span>
+              <span class="mini-value" id="progressPercent">0%</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-label">Processed</span>
+              <span class="mini-value" id="progressCount">0 / 0</span>
+            </div>
+            <div class="mini-stat text-emerald">
+              <span class="mini-label">Verified</span>
+              <span class="mini-value" id="progressSuccess">0</span>
+            </div>
+            <div class="mini-stat text-rose">
+              <span class="mini-label">Failed</span>
+              <span class="mini-value" id="progressFailed">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Animated Progress Bar -->
+        <div class="progress-track">
+          <div class="progress-fill" id="progressBarFill" style="width: 0%"></div>
+        </div>
+
+        <!-- Current Active Fetch Ticker -->
+        <div class="current-student-ticker" id="currentStudentTicker">
+          <span class="ticker-label"><i class="fa-solid fa-bolt"></i> Currently querying:</span>
+          <span class="ticker-user" id="currentStudentName">Connecting to LeetCode API...</span>
+        </div>
+      </section>
+
+      <!-- Dashboard Visual Report Wrapper (Captured on download) -->
+      <div class="dashboard-report-wrapper" id="dashboardReportWrapper">
+        
+        <!-- Snapshot Header (Shown during visual dashboard export) -->
+        <div class="report-capture-header hidden" id="reportCaptureHeader">
+          <div class="report-capture-brand">
+            <div class="logo-box-mini">
+              <i class="fa-brands fa-leetcode text-amber"></i>
+            </div>
+            <div>
+              <h3>LeetTrack Pro • Executive Performance Report</h3>
+              <p>Automated Student LeetCode Analytics, Difficulty Breakdown & Streaks</p>
+            </div>
+          </div>
+          <div class="report-capture-meta" id="reportCaptureMeta">
+            <span class="report-date"><i class="fa-regular fa-calendar"></i> Generated: Live</span>
+            <span class="report-status"><i class="fa-solid fa-circle-check text-emerald"></i> Verified</span>
+          </div>
+        </div>
+
+        <!-- Dashboard Statistics Overview -->
+        <section class="dashboard-stats hidden" id="dashboardStats">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-blue">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Total Students Enrolled</span>
+              <h3 class="stat-value" id="statTotalStudents">0</h3>
+              <span class="stat-sub" id="statActiveStudents">0 profiles verified</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-purple">
+              <i class="fa-solid fa-code"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Total Problems Solved</span>
+              <h3 class="stat-value" id="statTotalSolved">0</h3>
+              <div class="diff-breakdown-pills">
+                <span class="pill pill-easy" id="statEasyTotal">0 Low</span>
+                <span class="pill pill-medium" id="statMediumTotal">0 Med</span>
+                <span class="pill pill-hard" id="statHardTotal">0 High</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-amber">
+              <i class="fa-solid fa-fire-flame-curved"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Top Active Streak</span>
+              <h3 class="stat-value text-amber" id="statMaxStreak">0 <span class="unit">days 🔥</span></h3>
+              <span class="stat-sub" id="statMaxStreakUser">Top streaker: -</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-emerald">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Class Average Solved</span>
+              <h3 class="stat-value" id="statAvgSolved">0</h3>
+              <span class="stat-sub" id="statAvgStreak">Avg streak: 0 days</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Interactive Charts -->
+        <section class="charts-section hidden" id="chartsSection">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4><i class="fa-solid fa-chart-pie text-emerald"></i> Difficulty Distribution (All Students)</h4>
+              <span class="chart-badge">Low vs Medium vs High</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="difficultyChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h4><i class="fa-solid fa-ranking-star text-amber"></i> Top 8 Performers (Solved Breakdown)</h4>
+              <span class="chart-badge">Class Leaderboard</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="topPerformersChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Results Table Section -->
+      <section class="results-section hidden" id="resultsSection">
+        
+        <!-- Table Toolbar -->
+        <div class="table-toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="searchInput" placeholder="Search by student name, roll number, or username..." />
+              <button class="clear-search hidden" id="btnClearSearch"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="filter-pills">
+              <button class="filter-btn active" data-filter="all">All (<span id="countAll">0</span>)</button>
+              <button class="filter-btn" data-filter="active-streak">🔥 Active Streak (<span id="countStreak">0</span>)</button>
+              <button class="filter-btn" data-filter="hard-solvers">🔴 Hard Solvers (<span id="countHard">0</span>)</button>
+              <button class="filter-btn" data-filter="top-performers">⭐ 200+ Solved (<span id="countTop">0</span>)</button>
+              <button class="filter-btn" data-filter="errors">⚠️ Issues (<span id="countError">0</span>)</button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <button class="btn btn-primary btn-glow" id="btnExportExcel" title="Download standard formatted Excel sheet with Executive Dashboard sheet & Visual Report">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Download Enriched Excel</span>
+            </button>
+            <button class="btn btn-secondary" id="btnExportDashboardImg" title="Download visual Dashboard report image (PNG)">
+              <i class="fa-solid fa-camera text-amber"></i>
+              <span>Dashboard Snapshot (PNG)</span>
+            </button>
+            <button class="btn btn-secondary" id="btnExportCSV" title="Export current records to CSV format">
+              <i class="fa-solid fa-file-csv"></i>
+              <span>CSV</span>
+            </button>
+            <button class="btn btn-ghost" id="btnRefreshAll" title="Re-fetch all profiles">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sheet / Tab Filter Bar (Visible when Excel has multiple tabs) -->
+        <div class="sheet-tabs-bar hidden" id="sheetTabsBar">
+          <div class="sheet-tabs-label">
+            <i class="fa-solid fa-layer-group text-amber"></i>
+            <span>Filter by Tab / Section:</span>
+          </div>
+          <div class="sheet-chips" id="sheetChipsContainer">
+            <!-- Dynamically populated: [All Tabs] [Section A] [Section B] -->
+          </div>
+        </div>
+
+        <!-- Main Enriched Table -->
+        <div class="table-container">
+          <table class="data-table" id="dataTable">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th class="col-tab hidden" id="colHeaderTab">Section Tab</th>
+                <th class="col-student sortable" data-sort="name">Student / LeetCode Profile <i class="fa-solid fa-sort"></i></th>
+                <th class="col-diff sortable" data-sort="easy">
+                  <span class="header-diff-tag diff-tag-easy">Low (Easy)</span> <i class="fa-solid fa-sort"></i>
+                </th>
+                <th class="col-diff sortable" data-sort="medium">
+                  <span class="header-diff-tag diff-tag-medium">Medium</span> <i class="fa-solid fa-sort"></i>
+                </th>
+                <th class="col-diff sortable" data-sort="hard">
+                  <span class="header-diff-tag diff-tag-hard">High (Hard)</span> <i class="fa-solid fa-sort"></i>
+                </th>
+                <th class="col-total sortable" data-sort="total">Total Solved <i class="fa-solid fa-sort"></i></th>
+                <th class="col-streak sortable" data-sort="streak">Daily Streak <i class="fa-solid fa-sort"></i></th>
+                <th class="col-active sortable" data-sort="activeDays">Active Days <i class="fa-solid fa-sort"></i></th>
+                <th class="col-ranking sortable" data-sort="rank">Global Rank <i class="fa-solid fa-sort"></i></th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Empty State -->
+        <div class="empty-state hidden" id="tableEmptyState">
+          <i class="fa-solid fa-filter-circle-xmark empty-icon"></i>
+          <h4>No matching records found</h4>
+          <p>Try adjusting your search keywords or switching filters.</p>
+          <button class="btn btn-secondary btn-sm" id="btnResetFilters">Reset Filters</button>
+        </div>
+
+        <!-- Table Footer Summary -->
+        <div class="table-footer">
+          <span id="tableShowingCount">Showing 0 of 0 students</span>
+          <div class="table-legends">
+            <span class="legend-item"><span class="legend-dot dot-easy"></span> Low: Easy Problems</span>
+            <span class="legend-item"><span class="legend-dot dot-medium"></span> Medium: Medium Problems</span>
+            <span class="legend-item"><span class="legend-dot dot-hard"></span> High: Hard Problems</span>
+            <span class="legend-item"><span class="legend-dot dot-fire"></span> Streak: Continuous Daily Submissions</span>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Quick Paste Links Modal -->
+  <div class="modal-overlay hidden" id="quickPasteModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-paste text-amber"></i>
+          <h3>Quick Paste LeetCode URLs or Handles</h3>
+        </div>
+        <button class="btn btn-ghost btn-sm close-modal" id="btnCloseQuickPaste">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Paste LeetCode URLs or handles (one per line, or comma-separated). You can also include student names in format: <code>Student Name, https://leetcode.com/u/username/</code>
+        </p>
+        <textarea id="quickPasteTextarea" class="paste-textarea" rows="8" placeholder="https://leetcode.com/u/neal_wu&#10;https://leetcode.com/u/lee215&#10;https://leetcode.com/u/hiepit&#10;StefanPochmann"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+        <button type="button" class="btn btn-primary btn-glow" id="btnSubmitQuickPaste">
+          <i class="fa-solid fa-play"></i>
+          <span>Start Extraction</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Profile Detail Modal -->
+  <div class="modal-overlay hidden" id="profileDetailModal">
+    <div class="modal-dialog modal-profile">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-brands fa-leetcode text-amber"></i>
+          <h3>Student Performance Profile</h3>
+        </div>
+        <button class="btn btn-ghost btn-sm close-modal" id="btnCloseProfileDetail">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="profileModalContent">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <a href="#" target="_blank" id="modalLeetCodeLink" class="btn btn-primary">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open LeetCode Profile
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Logic -->
+  <script src="js/app.js"></script>
+</body>
+</html>
