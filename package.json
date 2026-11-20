@@ -1,0 +1,16 @@
+{
+  "name": "leetcode-student-tracker",
+  "version": "1.0.0",
+  "description": "Upload Excel sheet of student LeetCode profiles and automatically fetch Low, Medium, High questions solved, streak, and rankings.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5"
+  }
+}
